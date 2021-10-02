@@ -1,10 +1,18 @@
 const express = require('express');
-const dummyData = require('../dummyData');
+const Post = require('../model/postModel');
 
 const Router = express.Router();
 
 // TODO display all posts
-Router.get('/posts', (req, res) => res.json(dummyData));
+Router.get('/posts', (req, res) => {
+	Post.find({})
+		.then((data) => {
+			res.json({ posts: data });
+		})
+		.catch((err) => {
+			console.log(err);
+		});
+});
 
 // TODO display individual posts
 Router.get('/posts/:post_id', (req, res) => {
@@ -13,8 +21,17 @@ Router.get('/posts/:post_id', (req, res) => {
 
 // TODO Add new Post
 Router.post('/posts', (req, res) => {
-	console.log(req.body);
-	res.json(req.body);
+	console.log(req.body)
+	const newPost = new Post (req.body);
+	newPost
+		.save()
+		.then(() => {
+			console.log('populating db ...', newPost);
+			res.json({ post: newPost });
+		})
+		.catch((err) => {
+			console.log(err);
+		});
 });
 // TODO Edit posts
 Router.put('/posts/:post_id', (req, res) =>
