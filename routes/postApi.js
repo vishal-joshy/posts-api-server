@@ -1,28 +1,34 @@
 const express = require('express');
 const Post = require('../model/postModel');
+const Comment = require('../model/commentModel');
 
 const Router = express.Router();
 
-// TODO display all posts
-Router.get('/posts', (req, res) => {
+Router.get('/posts', (req, res, next) => {
 	Post.find({})
 		.then((data) => {
 			res.json({ posts: data });
 		})
 		.catch((err) => {
-			console.log(err);
+			return next(err);
 		});
 });
 
-// TODO display individual posts
-Router.get('/posts/:post_id', (req, res) => {
-	res.json({ message: 'GET /posts/post_id to be implemented' });
+Router.get('/posts/:post_id', (req, res, next) => {
+	console.log(req.params.post_id);
+	Post.findById(req.params.post_id)
+		.then((data) => {
+			console.log(data);
+			res.json(data);
+		})
+		.catch((err) => {
+			return next(err);
+		});
 });
 
-// TODO Add new Post
 Router.post('/posts', (req, res) => {
-	console.log(req.body)
-	const newPost = new Post (req.body);
+	console.log(req.body);
+	const newPost = new Post(req.body);
 	newPost
 		.save()
 		.then(() => {
@@ -33,18 +39,44 @@ Router.post('/posts', (req, res) => {
 			console.log(err);
 		});
 });
-// TODO Edit posts
-Router.put('/posts/:post_id', (req, res) =>
-	res.json({ message: 'PUT /posts/post_id to be implemented' })
-);
-// TODO Delete posts
-Router.delete('/posts/:post_id', (req, res) =>
-	res.json({ message: 'DELETE /posts/post_id to be implemented' })
-);
+
+Router.put('/posts/:post_id', (req, res, next) => {
+	console.log(req.params.post_id);
+	console.log(req.body);
+	Post.findByIdAndUpdate(req.params.post_id, req.body)
+		.then(() => {
+			Post.findById(req.params.post_id).then((data) => {
+				res.send(data);
+			});
+		})
+		.catch((err) => next(err));
+});
+
+Router.delete('/posts/:post_id', (req, res, next) => {
+	console.log(req.params.post_id);
+	Post.findByIdAndRemove(req.params.post_id)
+		.then(() => {
+			res.json({ status: `${req.params.post_id}` });
+		})
+		.catch((err) => next(err));
+});
+
 //* General client Route
-// TODO Post comment to individual posts
-Router.post('/posts/:post_id/comments', (req, res) =>
-	res.json({ message: 'GET /posts/post_id to be implemented' })
-);
+Router.post('/posts/:post_id/comments', (req, res) => {
+	console.log(req.params.post_id);
+	const newComment = new Comment(req.body);
+	Post.findById(req.params.post_id)
+		.then((data) => {
+			data.comments.push(newComment);
+			Post.findByIdAndUpdate(req.params.post_id, data)
+				.then(() => {
+					Post.findById(req.params.post_id).then((data) => {
+						res.json(data);
+					});
+				})
+				.catch((err) => next(err));
+		})
+		.catch((err) => next(err));
+});
 
 module.exports = Router;

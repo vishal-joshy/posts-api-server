@@ -7,7 +7,7 @@ const postSchema = new Schema({
 	subheading: { type: String, required: true },
 	content: { type: String, required: true },
 	date: { type: String },
-	comments: [{ type: Schema.Types.ObjectId, ref: 'Comment' }],
+	comments: [],
 });
 
 module.exports = mongoose.model('Post', postSchema);
