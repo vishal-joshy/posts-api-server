@@ -7,7 +7,7 @@ const Router = express.Router();
 Router.get('/posts', (req, res, next) => {
 	Post.find({})
 		.then((data) => {
-			res.json({ posts: data });
+			res.json(data);
 		})
 		.catch((err) => {
 			return next(err);
