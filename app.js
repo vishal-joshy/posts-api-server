@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors')
+const cors = require('cors');
 
 const connectDB = require('./db');
 const app = express();
@@ -7,11 +7,12 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(cors())
+app.use(cors());
 
 connectDB();
 
 app.use('/api', require('./routes/postApi'));
+app.use('/api', require('./routes/userApi'));
 
 // error handler
 app.use((err, req, res, next) => {
