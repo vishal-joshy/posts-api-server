@@ -1,46 +1,69 @@
 const express = require('express');
 const cors = require('cors');
 const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
 const User = require('./model/userModel');
-const session = require('express-session');
-
+const flash = require('express-flash');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./db');
+const LocalStrategy = require('passport-local').Strategy;
+const config = require('./config');
+const passportJWT = require('passport-jwt');
+const JWTStrategy = passportJWT.Strategy;
+const ExtractJWT = passportJWT.ExtractJwt;
+
+passport.use(
+	new LocalStrategy({ usernameField: 'username', passwordField: 'password' }, function (
+		username,
+		password,
+		cb
+	) {
+		return User.findOne({ username, password })
+			.then((user) => {
+				if (!user) {
+					return cb(null, false, { message: 'Incorrect email or password.' });
+				}
+				return cb(null, user, { message: 'Logged In Successfully' });
+			})
+			.catch((err) => cb(err));
+	})
+);
+
+passport.use(
+	new JWTStrategy(
+		{
+			jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
+			secretOrKey: 'your_jwt_secret',
+		},
+		function (jwtPayload, cb) {
+			//find the user in db if needed. This functionality may be omitted if you store everything you'll need in JWT payload.
+			console.log("payload",jwtPayload);
+			return User.findById(jwtPayload.userId)
+				.then((user) => {
+					console.log(user);
+					return cb(null, user);
+				})
+				.catch((err) => {
+					return cb(err);
+				});
+		}
+	)
+);
+
 const app = express();
 connectDB();
 
-passport.use(
-	new LocalStrategy(function (username, password, done) {
-		User.findOne({ username: username }, function (err, user) {
-			if (err) {
-				return done(err);
-			}
-			if (!user) {
-				return done(null, false, { message: 'Incorrect username.' });
-			}
-			if (user.password !== password) {
-				return done(null, false, { message: 'Incorrect password.' });
-			}
-			return done(null, user);
-		});
-	})
-);
-passport.serializeUser(function (user, done) {
-	done(null, user.id);
-});
-
-passport.deserializeUser(function (id, done) {
-	User.findById(id, function (err, user) {
-		done(err, user);
-	});
-});
-
-app.use(session({ secret: 'cats', resave: false, saveUninitialized: true }));
-app.use(passport.initialize());
-app.use(passport.session());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
+app.use(passport.initialize());
+app.use(flash());
+app.use(cookieParser());
+
+app.use((req, res, next) => {
+	console.log('req.session', req.session);
+	console.log('req.user', req.user);
+	next();
+});
 
 app.use('/api', require('./routes/postApi'));
 app.use('/api', require('./routes/userApi'));
