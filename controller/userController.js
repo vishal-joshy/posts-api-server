@@ -2,6 +2,7 @@ const User = require('../model/userModel');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
+const bcrypt = require('bcrypt')
 
 const user_login_post = function (req, res, next) {
 	passport.authenticate('local', { session: false }, (err, user, info) => {
@@ -22,12 +23,18 @@ const user_login_post = function (req, res, next) {
 	})(req, res);
 };
 
-const user_signup_post = (req, res, next) => {
-	const newUser = new User(req.body);
+const user_signup_post = async (req, res, next) => {
+	const hash = await bcrypt.hash(req.body.password, 10)
+	const compare = await bcrypt.compare(req.body.password,hash);
+	console.log(compare);
+	const newUser = new User({
+		username:req.body.username,
+		password:hash
+	})
 	newUser
 		.save()
 		.then(() => {
-			res.json(req.body);
+			res.json({signUpStatus: 'success' });
 		})
 		.catch((err) => next(err));
 };

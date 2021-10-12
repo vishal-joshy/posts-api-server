@@ -12,8 +12,5 @@ Router.post('/user/login', userController.user_login_post);
 
 Router.post('/user/sign-up', userController.user_signup_post);
 
-Router.get('/success', passport.authenticate('jwt', { session: false }), (req, res) => {
-	res.json({ loginStatus: 'success' });
-});
 
 module.exports = Router;
